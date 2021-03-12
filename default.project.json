@@ -2,12 +2,6 @@
 	"name": "roblox-ts-game",
 	"tree": {
 		"$className": "DataModel",
-		"ServerScriptService": {
-			"$className": "ServerScriptService",
-			"server": {
-				"$path": "out/server"
-			}
-		},
 		"ReplicatedStorage": {
 			"$className": "ReplicatedStorage",
 			"rbxts_include": {
@@ -15,9 +9,6 @@
 				"node_modules": {
 					"$path": "node_modules/@rbxts"
 				}
-			},
-			"shared": {
-				"$path": "out/shared"
 			}
 		},
 		"StarterPlayer": {
