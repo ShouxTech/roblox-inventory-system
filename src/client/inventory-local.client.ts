@@ -1,12 +1,16 @@
-import { GuiService, Players, RunService, StarterGui, UserInputService } from '@rbxts/services';
+import { GuiService, Players, RunService, StarterGui, TweenService, UserInputService } from '@rbxts/services';
 
 interface ToolData {
     tool: Tool;
     button: TextButton;
-}
+};
 
 const UNEQUIPPED_COLOR = Color3.fromRGB(60, 60, 60);
 const EQUIPPED_COLOR = Color3.fromRGB(115, 115, 115);
+const FULL_MAIN_FRAME_SIZE = new UDim2(0, 655, 0, 70);
+const OPENED_EXTRA_FRAME_SIZE = new UDim2(0, 655, 0, 225);
+const CLOSED_EXTRA_FRAME_SIZE = new UDim2(0, 655, 0, 0);
+const TWEEN_INFO = new TweenInfo(0.23);
 const MAX_TOOLS = 10;
 
 const localPlayer = Players.LocalPlayer;
@@ -29,6 +33,13 @@ const extraScrollingFrame = extraFrame.WaitForChild('ScrollingFrame') as Scrolli
 
 const components = inventoryGUI.WaitForChild('Components') as Configuration;
 const toolBtnPrefab = components.WaitForChild('ToolBtn') as TextButton;
+
+const mainFrameFullTween = TweenService.Create(mainFrame, TWEEN_INFO, {Size: FULL_MAIN_FRAME_SIZE});
+
+const extraFrameOpenTween = TweenService.Create(extraFrame, TWEEN_INFO, {Size: OPENED_EXTRA_FRAME_SIZE});
+const extraFrameCloseTween = TweenService.Create(extraFrame, TWEEN_INFO, {Size: CLOSED_EXTRA_FRAME_SIZE});
+
+let isExtraFrameOpen = false;
 
 const tools: ToolData[] = [];
 const extraTools: ToolData[] = [];
@@ -67,6 +78,25 @@ function getPositionForPositionLabel(position: number): string {
     return tostring((position === 10) ? 0 : position);
 }
 
+function updateMainAndExtraFrame() {
+    if (isExtraFrameOpen) {
+        if (mainFrame.Size !== FULL_MAIN_FRAME_SIZE) {
+            mainFrameFullTween.Play();
+        }
+        if (extraFrame.Size !== OPENED_EXTRA_FRAME_SIZE) {
+            extraFrame.Visible = true;
+            extraFrameOpenTween.Play();
+        }
+    } else {
+        TweenService.Create(mainFrame, TWEEN_INFO, {Size: UDim2.fromOffset((tools.size() * 65) + 5, 70)}).Play();
+        if (extraFrame.Size !== CLOSED_EXTRA_FRAME_SIZE) {
+            extraFrameCloseTween.Play();
+            extraFrameCloseTween.Completed.Wait();
+            extraFrame.Visible = false;
+        }
+    }
+}
+
 function onInput(input: InputObject, gameProcessedEvent: boolean) {
     if (gameProcessedEvent) return;
 
@@ -81,7 +111,8 @@ function onInput(input: InputObject, gameProcessedEvent: boolean) {
             humanoid.UnequipTools();
         }
     } else if (input.KeyCode === Enum.KeyCode.Backquote) {
-        extraFrame.Visible = !extraFrame.Visible;
+        isExtraFrameOpen = !extraFrame.Visible;
+        updateMainAndExtraFrame();
     }
 }
 
@@ -126,6 +157,14 @@ function updateToolBtns(startIndex: number) {
         const newPosition = i + 1;
         btn.LayoutOrder = newPosition;
         positionLabel.Text = getPositionForPositionLabel(newPosition);
+    }
+}
+
+function updateExtraToolBtns(startIndex: number) {
+    for (let i = startIndex; i < extraTools.size(); i++) {
+        const btn = extraTools[i].button;
+        const newPosition = i + 1;
+        btn.LayoutOrder = newPosition;
     }
 }
 
@@ -183,6 +222,7 @@ function startBtnDragging(toolBtn: TextButton) {
         }
         if ((searchedArray === extraTools) || (targetSearchedArray === extraTools)) {
             updateExtraScrollingFrame();
+            updateExtraToolBtns(math.min(toolArrayIndex, targetToolArrayIndex));
         }
     } else if (objectUnderMouse === mainFrame) {
         if (tools.size() === MAX_TOOLS) return;
@@ -198,6 +238,7 @@ function startBtnDragging(toolBtn: TextButton) {
         } else {
             (toolBtn.FindFirstChild('PositionLabel') as TextLabel).Text = getPositionForPositionLabel(newArrayIndex);
             updateExtraScrollingFrame();
+            updateExtraToolBtns(math.min(toolArrayIndex));
         }
     } else if (objectUnderMouse === extraScrollingFrame) {
         searchedArray.remove(toolArrayIndex);
@@ -241,6 +282,8 @@ function toolAdded(tool: Tool) {
         tool: tool,
         button: toolBtn
     });
+
+    updateMainAndExtraFrame();
 }
 
 function toolEquipped(tool: Tool) {
@@ -265,6 +308,11 @@ function toolRemoved(tool: Tool) {
     const toolData = searchedArray[toolArrayIndex];
     searchedArray.remove(toolArrayIndex);
     toolData.button.Destroy();
+    if (searchedArray === tools) {
+        updateToolBtns(toolArrayIndex);
+    }
+    updateExtraScrollingFrame();
+    updateMainAndExtraFrame();
 }
 
 function characterAdded(char_?: Model) {
