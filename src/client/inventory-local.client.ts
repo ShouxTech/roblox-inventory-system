@@ -81,6 +81,7 @@ function getPositionForPositionLabel(position: number): string {
 function updateMainAndExtraFrame() {
     if (isExtraFrameOpen) {
         if (mainFrame.Size !== FULL_MAIN_FRAME_SIZE) {
+            mainFrame.Visible = true;
             mainFrameFullTween.Play();
         }
         if (extraFrame.Size !== OPENED_EXTRA_FRAME_SIZE) {
@@ -88,7 +89,18 @@ function updateMainAndExtraFrame() {
             extraFrameOpenTween.Play();
         }
     } else {
-        TweenService.Create(mainFrame, TWEEN_INFO, {Size: UDim2.fromOffset((tools.size() * 65) + 5, 70)}).Play();
+        const amountOfTools = tools.size();
+        if (amountOfTools === 0) {
+            coroutine.wrap(() => {
+                const tween = TweenService.Create(mainFrame, TWEEN_INFO, {Size: UDim2.fromOffset(0, 70)});
+                tween.Play();
+                tween.Completed.Wait();
+                mainFrame.Visible = false;
+            })();
+        } else {
+            mainFrame.Visible = true;
+            TweenService.Create(mainFrame, TWEEN_INFO, {Size: UDim2.fromOffset((amountOfTools * 65) + 5, 70)}).Play();
+        }
         if (extraFrame.Size !== CLOSED_EXTRA_FRAME_SIZE) {
             extraFrameCloseTween.Play();
             extraFrameCloseTween.Completed.Wait();
@@ -306,11 +318,20 @@ function toolRemoved(tool: Tool) {
     const [searchedArray, toolArrayIndex] = getToolDataFromInstance(tool);
     if ((toolArrayIndex === -1)) return;
     const toolData = searchedArray[toolArrayIndex];
+
+    if (equippedTool === tool) {
+        toolUnequipped(tool);
+    }
+
     searchedArray.remove(toolArrayIndex);
     toolData.button.Destroy();
+
     if (searchedArray === tools) {
         updateToolBtns(toolArrayIndex);
+    } else if (searchedArray === extraTools) {
+        updateExtraToolBtns(toolArrayIndex);
     }
+
     updateExtraScrollingFrame();
     updateMainAndExtraFrame();
 }
@@ -330,7 +351,9 @@ function characterAdded(char_?: Model) {
     char.ChildAdded.Connect((child) => {
         if (child.IsA('Tool')) {
             const [_, toolArrayIndex] = getToolDataFromInstance(child);
-            if ((toolArrayIndex === -1)) toolAdded(child);
+            if (toolArrayIndex === -1) {
+                toolAdded(child);
+            }
             toolEquipped(child);
         }
     });
