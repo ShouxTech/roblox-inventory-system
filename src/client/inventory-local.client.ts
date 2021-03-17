@@ -338,6 +338,22 @@ function toolRemoved(tool: Tool) {
 
 function characterAdded(char_?: Model) {
     if (!char_) return;
+
+    tools.clear();
+    extraTools.clear();
+
+    for (const toolBtn of mainFrame.GetChildren()) {
+        if (toolBtn.IsA('TextButton')) {
+            toolBtn.Destroy();
+        }
+    }
+
+    for (const toolBtn of extraScrollingFrame.GetChildren()) {
+        if (toolBtn.IsA('TextButton')) {
+            toolBtn.Destroy();
+        }
+    }
+
     char = char_;
     backpack = localPlayer.WaitForChild('Backpack') as Backpack;
     humanoid = char.WaitForChild('Humanoid') as Humanoid;
