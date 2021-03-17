@@ -376,6 +376,7 @@ function characterAdded(char_?: Model) {
 
     char.ChildRemoved.Connect((child) => {
         if (child.IsA('Tool')) {
+            if (child.Parent === backpack) return;
             toolRemoved(child);
         }
     });
