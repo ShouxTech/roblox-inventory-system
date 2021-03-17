@@ -184,24 +184,7 @@ function updateExtraScrollingFrame() {
     extraScrollingFrame.CanvasSize = UDim2.fromOffset(0, (math.floor(extraTools.size() / 10) + 1) * 65);
 }
 
-function startBtnDragging(toolBtn: TextButton) {
-    let finalPosition: Vector2 = new Vector2();
-    const toolBtnClone = toolBtn.Clone();
-    toolBtnClone.Parent = inventoryGUI;
-
-    while (UserInputService.IsMouseButtonPressed(Enum.UserInputType.MouseButton1)) {
-        let mouseLocation = UserInputService.GetMouseLocation();
-        mouseLocation = new Vector2(mouseLocation.X, mouseLocation.Y - GUI_INSET_Y);
-        finalPosition = mouseLocation;
-        toolBtnClone.Position = UDim2.fromOffset(mouseLocation.X, mouseLocation.Y);
-        heartbeat.Wait();
-    }
-
-    toolBtnClone.Destroy();
-
-    const objectUnderMouse = getObjectUnderMouse(finalPosition);
-    if ((!objectUnderMouse) || (objectUnderMouse === toolBtn)) return;
-
+function moveToolBtn(toolBtn: TextButton, objectUnderMouse: ScrollingFrame | TextButton | Frame) {
     const [searchedArray, toolArrayIndex] = getToolDataFromInstance(toolBtn);
     if ((toolArrayIndex === -1)) return;
     const toolData = searchedArray[toolArrayIndex];
@@ -266,9 +249,33 @@ function startBtnDragging(toolBtn: TextButton) {
     }
 }
 
+function startBtnDragging(toolBtn: TextButton) {
+    let finalPosition: Vector2 = new Vector2();
+    const toolBtnClone = toolBtn.Clone();
+    toolBtnClone.Parent = inventoryGUI;
+
+    while (UserInputService.IsMouseButtonPressed(Enum.UserInputType.MouseButton1)) {
+        let mouseLocation = UserInputService.GetMouseLocation();
+        mouseLocation = new Vector2(mouseLocation.X, mouseLocation.Y - GUI_INSET_Y);
+        finalPosition = mouseLocation;
+        toolBtnClone.Position = UDim2.fromOffset(mouseLocation.X, mouseLocation.Y);
+        heartbeat.Wait();
+    }
+
+    toolBtnClone.Destroy();
+
+    const objectUnderMouse = getObjectUnderMouse(finalPosition);
+    if ((!objectUnderMouse) || (objectUnderMouse === toolBtn)) return;
+
+    moveToolBtn(toolBtn, objectUnderMouse);
+}
+
 function toolAdded(tool: Tool) {
     const isInventoryFull = (tools.size() === MAX_TOOLS);
     const toolArrayIndex = tools.size() + 1;
+
+    let lastClickedTime = os.time();
+    let heldTag = os.time();
 
     const toolBtn = toolBtnPrefab.Clone();
     const positionLabel = toolBtn.FindFirstChild('PositionLabel') as TextLabel;
@@ -277,17 +284,33 @@ function toolAdded(tool: Tool) {
     positionLabel.Text = tostring(isInventoryFull ? '' : getPositionForPositionLabel(toolArrayIndex));
     nameLabel.Text = tool.Name;
     toolBtn.Parent = isInventoryFull ? extraScrollingFrame : mainFrame;
+
     if (isInventoryFull) {
         updateExtraScrollingFrame();
     }
 
     toolBtn.MouseButton1Down.Connect(() => {
+        const thisTag = os.time();
+        heldTag = thisTag;
         if (!isToolEquipped(tool)) {
             humanoid.EquipTool(tool);
         } else {
             humanoid.UnequipTools();
         }
-        startBtnDragging(toolBtn);
+        if (thisTag - lastClickedTime < 0.2) {
+            if (toolBtn.Parent === extraScrollingFrame) {
+                moveToolBtn(toolBtn, mainFrame);
+            }
+        }
+        lastClickedTime = thisTag;
+        wait(0.06);
+        if (heldTag === thisTag) {
+            startBtnDragging(toolBtn);
+        }
+    });
+
+    toolBtn.MouseButton1Up.Connect(() => {
+        heldTag = 0;
     });
 
     (isInventoryFull ? extraTools : tools).push({
