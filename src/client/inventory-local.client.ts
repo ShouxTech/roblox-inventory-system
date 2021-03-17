@@ -326,7 +326,7 @@ function toolEquipped(tool: Tool) {
     if ((toolArrayIndex === -1)) return;
     const toolData = searchedArray[toolArrayIndex];
     equippedTool = toolData.tool;
-    toolData.button.BackgroundColor3 = EQUIPPED_COLOR;
+    TweenService.Create(toolData.button, TWEEN_INFO, {BackgroundColor3: EQUIPPED_COLOR}).Play();
 }
 
 function toolUnequipped(tool: Tool) {
@@ -334,7 +334,7 @@ function toolUnequipped(tool: Tool) {
     if ((toolArrayIndex === -1)) return;
     const toolData = searchedArray[toolArrayIndex];
     equippedTool = undefined;
-    toolData.button.BackgroundColor3 = UNEQUIPPED_COLOR;
+    TweenService.Create(toolData.button, TWEEN_INFO, {BackgroundColor3: UNEQUIPPED_COLOR}).Play();
 }
 
 function toolRemoved(tool: Tool) {
