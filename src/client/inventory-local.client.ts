@@ -374,6 +374,12 @@ function characterAdded(char_?: Model) {
         }
     });
 
+    char.ChildRemoved.Connect((child) => {
+        if (child.IsA('Tool')) {
+            toolRemoved(child);
+        }
+    });
+
     backpack.ChildAdded.Connect((child) => {
         if (child.IsA('Tool')) {
             if (equippedTool === child) {
