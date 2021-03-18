@@ -24,7 +24,7 @@ let char: Model;
 let humanoid: Humanoid;
 
 const [topGUIInset] = GuiService.GetGuiInset();
-let guiInsetY = topGUIInset.Y;
+const GUI_INSET_Y = topGUIInset.Y;
 
 const inventoryGUI = playerGUI.WaitForChild('InventoryGUI') as ScreenGui;
 const uiScaleInstance = inventoryGUI.WaitForChild('UIScale') as UIScale;
@@ -194,7 +194,6 @@ function updateExtraScrollingFrame() {
 
 function updateScale() {
     uiScale = uiScaleInstance.Scale;
-    guiInsetY = guiInsetY / uiScale;
 }
 
 function moveToolBtn(toolBtn: TextButton, objectUnderMouse: ScrollingFrame | TextButton | Frame) {
@@ -269,9 +268,9 @@ function startBtnDragging(toolBtn: TextButton) {
 
     while (UserInputService.IsMouseButtonPressed(Enum.UserInputType.MouseButton1)) {
         let mouseLocation = UserInputService.GetMouseLocation();
-        mouseLocation = new Vector2(mouseLocation.X / uiScale, (mouseLocation.Y / uiScale) - guiInsetY);
+        mouseLocation = new Vector2(mouseLocation.X, mouseLocation.Y - GUI_INSET_Y);
         finalPosition = mouseLocation;
-        toolBtnClone.Position = UDim2.fromOffset(mouseLocation.X, mouseLocation.Y);
+        toolBtnClone.Position = UDim2.fromOffset(mouseLocation.X / uiScale, mouseLocation.Y / uiScale);
         heartbeat.Wait();
     }
 
