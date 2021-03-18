@@ -1,4 +1,4 @@
-import { GuiService, Players, RunService, StarterGui, TweenService, UserInputService } from '@rbxts/services';
+import { GuiService, Players, ReplicatedStorage, RunService, StarterGui, TweenService, UserInputService } from '@rbxts/services';
 
 interface ToolData {
     tool: Tool;
@@ -27,6 +27,7 @@ const [topGUIInset] = GuiService.GetGuiInset();
 const GUI_INSET_Y = topGUIInset.Y;
 
 const inventoryGUI = playerGUI.WaitForChild('InventoryGUI') as ScreenGui;
+const uiScaleInstance = inventoryGUI.WaitForChild('UIScale') as UIScale;
 const mainFrame = inventoryGUI.WaitForChild('MainFrame') as Frame;
 const extraFrame = inventoryGUI.WaitForChild('ExtraFrame') as Frame;
 const extraScrollingFrame = extraFrame.WaitForChild('ScrollingFrame') as ScrollingFrame;
@@ -38,6 +39,12 @@ const mainFrameFullTween = TweenService.Create(mainFrame, TWEEN_INFO, {Size: FUL
 
 const extraFrameOpenTween = TweenService.Create(extraFrame, TWEEN_INFO, {Size: OPENED_EXTRA_FRAME_SIZE});
 const extraFrameCloseTween = TweenService.Create(extraFrame, TWEEN_INFO, {Size: CLOSED_EXTRA_FRAME_SIZE});
+
+const setInventoryEnabled = ReplicatedStorage.WaitForChild('SetInventoryEnabled') as BindableEvent;
+
+let enabled = true;
+
+let uiScale = 1;
 
 let isExtraFrameOpen = false;
 
@@ -111,6 +118,7 @@ function updateMainAndExtraFrame() {
 
 function onInput(input: InputObject, gameProcessedEvent: boolean) {
     if (gameProcessedEvent) return;
+    if (!enabled) return;
 
     const toolArrayIndex = numberKeys.get(input.KeyCode.Name);
 
@@ -182,6 +190,10 @@ function updateExtraToolBtns(startIndex: number) {
 
 function updateExtraScrollingFrame() {
     extraScrollingFrame.CanvasSize = UDim2.fromOffset(0, (math.floor(extraTools.size() / 10) + 1) * 65);
+}
+
+function updateScale() {
+    uiScale = uiScaleInstance.Scale;
 }
 
 function moveToolBtn(toolBtn: TextButton, objectUnderMouse: ScrollingFrame | TextButton | Frame) {
@@ -256,7 +268,7 @@ function startBtnDragging(toolBtn: TextButton) {
 
     while (UserInputService.IsMouseButtonPressed(Enum.UserInputType.MouseButton1)) {
         let mouseLocation = UserInputService.GetMouseLocation();
-        mouseLocation = new Vector2(mouseLocation.X, mouseLocation.Y - GUI_INSET_Y);
+        mouseLocation = new Vector2(mouseLocation.X / uiScale, (mouseLocation.Y / uiScale) - GUI_INSET_Y);
         finalPosition = mouseLocation;
         toolBtnClone.Position = UDim2.fromOffset(mouseLocation.X, mouseLocation.Y);
         heartbeat.Wait();
@@ -425,6 +437,15 @@ function characterAdded(char_?: Model) {
 
 characterAdded(localPlayer.Character);
 localPlayer.CharacterAdded.Connect(characterAdded);
+
+updateScale();
+uiScaleInstance.GetPropertyChangedSignal('Scale').Connect(updateScale);
+
+setInventoryEnabled.Event.Connect((isEnabled) => {
+    enabled = isEnabled;
+    inventoryGUI.Enabled = isEnabled;
+});
+
 UserInputService.InputBegan.Connect(onInput);
 
 StarterGui.SetCoreGuiEnabled(Enum.CoreGuiType.Backpack, false);
