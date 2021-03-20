@@ -433,6 +433,11 @@ function characterAdded(char_?: Model) {
             }
         }
     });
+    
+    if (tools.isEmpty() && extraTools.isEmpty()) {
+        updateExtraScrollingFrame();
+        updateMainAndExtraFrame();
+    }
 }
 
 characterAdded(localPlayer.Character);
