@@ -433,6 +433,12 @@ function characterAdded(char_?: Model) {
             }
         }
     });
+    
+    if (tools.isEmpty() && extraTools.isEmpty()) {
+        mainFrame.Size = UDim2.fromOffset((tools.size() * 65) + 5, 70);
+        updateExtraScrollingFrame();
+        updateMainAndExtraFrame();
+    }
 }
 
 characterAdded(localPlayer.Character);
