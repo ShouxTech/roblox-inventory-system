@@ -312,6 +312,7 @@ function toolAdded(tool: Tool) {
         if (thisTag - lastClickedTime < 0.2) {
             if (toolBtn.Parent === extraScrollingFrame) {
                 moveToolBtn(toolBtn, mainFrame);
+                return;
             }
         }
         lastClickedTime = thisTag;
